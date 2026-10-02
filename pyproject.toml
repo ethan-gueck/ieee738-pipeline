@@ -1,0 +1,17 @@
+[project]
+name = "ieee738-pipeline"
+version = "0.1.0"
+description = "The IEEE 738 thermal pipeline, told as an animation: conductor temperatures and thermal cycles for overhead transmission lines."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"
