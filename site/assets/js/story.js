@@ -16,7 +16,7 @@
  * After Step 7 the bot walks off, then walks onto a black outro to say thanks.
  * Play all runs straight through; Step through pauses at the end of every step
  * and substep, with Previous (rewind), Play and Next (fast forward).
- * Open the page with #t=42 to start 42 seconds in.
+ * Open the page with #t=42 to start 42 seconds in (playback seconds, as the clock shows them).
  */
 (function () {
   "use strict";
@@ -125,6 +125,7 @@
   // ---- Shots ------------------------------------------------------------------------------
   // cam: camera moves, each { a, b, ...camera } running from local second a to b; the camera holds between moves.
   // say: what the bot asks or says, [from, to, text] in local seconds. title: the step's card opens the shot.
+  // linger: overrides LINGER for the shot's bubbles. think: [from, to], the bot's COBYLA thought bubble (Step 2.3).
   const US = { space: "map", x: 487, y: 305, z: 0.92 };
   const VA = { space: "map", x: 806, y: 288, z: 4.2 };
   const WIDE = { space: "land", x: 1110, z: 0.4 };
@@ -167,7 +168,7 @@
       text: "Step 2.1 clears out the old temperature data." },
     { key: "2.2", step: "2.2", dur: 8, title: true, cam: [], say: [[3, 5.8, "Making sure the tables exist."]],
       text: "Step 2.2 creates the temperature tables if they don't exist." },
-    { key: "2.3", step: "2.3", dur: 15, title: true, cam: [], say: [[3, 6, "How hot is the conductor?"]],
+    { key: "2.3", step: "2.3", dur: 15, title: true, cam: [], say: [[3, 5.8, "How hot is the conductor?"]], linger: 0, think: [6, 13.9],
       text: "Step 2.3 calculates the conductor's temperature hour by hour from the IEEE 738 heat balance." },
     { key: "2.4", step: "2.4", dur: 9, title: true, cam: [], say: [[3, 6, "Fresh thermal cycle tables."]],
       text: "Step 2.4 drops and recreates the thermal cycle detail and summary tables." },
@@ -178,7 +179,7 @@
     { key: "4", step: "4", dur: 8, title: true, cam: [], say: [[3, 5.8, "CSV copies, for checking."]],
       text: "Optional Step 4 converts the results to CSV for checking by eye." },
     { key: "5", step: "5", dur: 10, title: true, cam: [], say: [[3, 6, "Do the configs match their templates?"]],
-      text: "Optional Step 5 conforms each .yaml config to its .dist template: global_config, prod_config and batch_config." },
+      text: "Optional Step 5 conforms each config file to its .dist template." },
     { key: "6", step: "6", dur: 13, title: true, cam: [], say: [[3, 6, "Here's how hot it ran."], [8.8, 11.8, "All on one dashboard."]],
       text: "Optional Step 6 visualizes the temperature results on a dashboard." },
     { key: "7", step: "7", dur: 14, title: true, cam: [], say: [[3, 6, "And what the run used."], [7.4, 10, "Pipeline complete."]],
@@ -186,6 +187,17 @@
     { key: "outro", step: "outro", dur: 9, cam: [], say: [[4.6, 8.4, "Thank you for watching."]],
       text: "Thank you for watching." },
   ];
+  // Story seconds play PACE times faster than real time, so the 1× setting runs at this pace.
+  const PACE = 1.4;
+  // Each bubble stays up LINGER story seconds past its line, leaving before the next bubble in its shot.
+  // A shot's last bubble holds the shot open for it, so the cut never clips it.
+  const LINGER = 2;
+  SHOTS.forEach((shot) => (shot.say || []).forEach((line, i, all) => {
+    const linger = shot.linger ?? LINGER;
+    if (i + 1 < all.length) { line[1] = Math.max(line[1], Math.min(line[1] + linger, all[i + 1][0] - 0.5)); return; }
+    line[1] += linger;
+    shot.dur = Math.max(shot.dur, line[1] + 0.2);
+  }));
   let TOTAL = 0;
   SHOTS.forEach((shot) => { shot.start = TOTAL; TOTAL += shot.dur; });
   const SHOT = Object.fromEntries(SHOTS.map((shot) => [shot.key, shot]));
@@ -308,9 +320,9 @@
     ctx.fillStyle = color; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, x, y - h / 2 + 0.5);
     ctx.restore();
   }
-  function check(x, y, r, k, color = P.mint) {
-    if (k <= 0) return;
-    ctx.save(); ctx.globalAlpha = A(1); ctx.strokeStyle = color; ctx.lineWidth = 2.2 * U; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  function check(x, y, r, k, color = P.mint, alpha = 1) {
+    if (k <= 0 || alpha <= 0) return;
+    ctx.save(); ctx.globalAlpha = A(alpha); ctx.strokeStyle = color; ctx.lineWidth = 2.2 * U; ctx.lineCap = "round"; ctx.lineJoin = "round";
     const a = [x - r, y], b = [x - r * 0.25, y + r * 0.7], c = [x + r, y - r * 0.8], k1 = clamp(k * 2), k2 = clamp(k * 2 - 1);
     ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(lerp(a[0], b[0], k1), lerp(a[1], b[1], k1));
     if (k2 > 0) ctx.lineTo(lerp(b[0], c[0], k2), lerp(b[1], c[1], k2));
@@ -408,6 +420,85 @@
     return null;
   }
 
+  /**
+   * Step 2.3's thought bubble: for the hour the trace has reached, COBYLA converges on the conductor temperature.
+   * The search space is T_c; the curve is the heat balance's squared residual, (q_c + q_r − q_s − I²R(T_c))², lowest
+   * at the solution. Each iterate steps toward it within the trust region ρ (the bracket), which halves as the
+   * linear model closes in. One solve every SOLVE story seconds, so it never holds up the trace on the screen:
+   * each shows the hour the trace reaches as it converges (the hours between are solved off screen).
+   */
+  const SOLVE = 1.9, CONVERGE = 0.72;   // a solve's iterates arrive over its first CONVERGE, then it holds
+  function cobyla(start, goal, rho = 30) {
+    const path = [{ x: start, rho }];
+    let x = start;
+    for (let k = 0; k < 12 && rho > 0.6; k++) {
+      const gap = goal - x;
+      if (Math.abs(gap) > rho) x += Math.sign(gap) * rho;                // the step to the trust region's edge
+      else { x = goal - gap * 0.35 * (k % 2 ? 1 : -1); rho *= 0.5; }       // the linear model overshoots a little; shrink ρ
+      path.push({ x, rho });
+    }
+    path.push({ x: goal, rho });
+    return path;
+  }
+  function thought(head, s) {
+    const [from, to] = SHOT["2.3"].think;
+    const alpha = Math.min(smooth((s - from) / 0.4), smooth((to - s) / 0.4));
+    if (alpha <= 0) return;
+    const n = DATA.temps.length, solveAt = s - from, round = Math.floor(solveAt / SOLVE), t = (solveAt % SOLVE) / SOLVE;
+    // the hour the trace on the screen reaches as this solve converges
+    const hour = Math.round((n - 1) * clamp((from + (round + CONVERGE) * SOLVE - 3.2) / 9.6));
+    const goal = DATA.temps[hour], start = DATA.air[hour], path = cobyla(start, goal);
+    const lo = 0, hi = 140, resid = (T) => ((T - goal) / 60) ** 2 * (1 + 0.25 * Math.sign(T - goal));
+    const top = Math.max(resid(lo), resid(hi));
+    const w = 236 * U, h = 140 * U;
+    const bx = clamp(head.x - w * 0.3, 8, W - w - 8), by = clamp(head.y - h - 70 * U, 8, H - h - 8);
+    ctx.save(); ctx.globalAlpha = clamp(alpha);
+    ctx.fillStyle = "#F7F3EC"; ctx.strokeStyle = "rgba(6,31,23,0.35)"; ctx.lineWidth = 2;
+    // a cloud: puffs round an oval, stroked then filled so only the outer edge keeps its line, and three
+    // puffs trailing down to the bot's head
+    ctx.beginPath();
+    for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2, rx = w / 2 - 14 * U, ry = h / 2 - 14 * U, r = (i % 2 ? 19 : 23) * U;
+      const cx = bx + w / 2 + Math.cos(a) * rx, cy = by + h / 2 + Math.sin(a) * ry;
+      ctx.moveTo(cx + r, cy); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    }
+    ctx.ellipse(bx + w / 2, by + h / 2, w / 2 - 12 * U, h / 2 - 12 * U, 0, 0, Math.PI * 2);
+    ctx.stroke(); ctx.fill();
+    ctx.lineWidth = 1;
+    [[0.25, 5], [0.5, 7.5], [0.78, 10]].forEach(([k, r]) => {
+      ctx.beginPath(); ctx.arc(lerp(head.x, bx + w * 0.3, k), lerp(head.y - 14 * U, by + h + 4 * U, k), r * U, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    });
+    // the search space
+    const px0 = bx + 40 * U, px1 = bx + w - 40 * U, py0 = by + 46 * U, py1 = by + h - 34 * U;
+    const PX = (T) => lerp(px0, px1, (T - lo) / (hi - lo)), PY = (r) => lerp(py1, py0, clamp(r / top));
+    font(10 * U, 700); ctx.fillStyle = "#0B2A21"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillText(`COBYLA · hour ${hour}`, px0, by + 28 * U);
+    ctx.strokeStyle = "rgba(11,42,33,0.35)"; ctx.beginPath(); ctx.moveTo(px0, py1); ctx.lineTo(px1, py1); ctx.stroke();
+    font(8.5 * U); ctx.fillStyle = "rgba(11,42,33,0.6)"; ctx.textAlign = "right"; ctx.fillText("T_c →", px1, py1 + 12 * U);
+    ctx.textAlign = "left"; ctx.fillText("residual²", px0, py0 - 4 * U);
+    ctx.strokeStyle = "rgba(11,42,33,0.5)"; ctx.lineWidth = 1.4 * U; ctx.beginPath();
+    for (let i = 0; i <= 60; i++) { const T = lo + ((hi - lo) * i) / 60; i ? ctx.lineTo(PX(T), PY(resid(T))) : ctx.moveTo(PX(T), PY(resid(T))); }
+    ctx.stroke();
+    // the iterates so far, the current one's trust region, and the solution once it lands
+    const shown = Math.min(path.length, 1 + Math.floor(clamp(t / CONVERGE) * (path.length - 1)));
+    const iter = path.slice(0, shown), cur = iter[iter.length - 1];
+    ctx.strokeStyle = "#B4741C"; ctx.lineWidth = 1.2 * U; ctx.beginPath();
+    iter.forEach((p, i) => (i ? ctx.lineTo(PX(p.x), PY(resid(p.x))) : ctx.moveTo(PX(p.x), PY(resid(p.x))))); ctx.stroke();
+    iter.forEach((p, i) => { ctx.beginPath(); ctx.arc(PX(p.x), PY(resid(p.x)), (i === iter.length - 1 ? 3.4 : 2.2) * U, 0, Math.PI * 2); ctx.fillStyle = i === iter.length - 1 ? "#B4741C" : "rgba(180,116,28,0.55)"; ctx.fill(); });
+    const done = shown === path.length;
+    if (!done) {
+      const yb = py1 + 4 * U, l = PX(Math.max(lo, cur.x - cur.rho)), r = PX(Math.min(hi, cur.x + cur.rho));
+      ctx.strokeStyle = "#0E6B52"; ctx.lineWidth = 1.6 * U; ctx.beginPath();
+      ctx.moveTo(l, yb - 4 * U); ctx.lineTo(l, yb); ctx.lineTo(r, yb); ctx.lineTo(r, yb - 4 * U); ctx.stroke();
+      font(8.5 * U, 600); ctx.fillStyle = "#0E6B52"; ctx.textAlign = "center"; ctx.fillText(`ρ = ${cur.rho < 1 ? cur.rho.toFixed(1) : cur.rho.toFixed(0)}`, (l + r) / 2, yb + 11 * U);
+    } else {
+      ctx.beginPath(); ctx.arc(PX(goal), PY(0), 6 * U, 0, Math.PI * 2); ctx.strokeStyle = "#0E6B52"; ctx.lineWidth = 1.8 * U; ctx.stroke();
+      font(9.5 * U, 700); ctx.fillStyle = "#0E6B52"; ctx.textAlign = goal > 100 ? "right" : "left";
+      ctx.fillText(`converged: T_c = ${goal.toFixed(0)} °C`, PX(goal) + (goal > 100 ? -10 : 10) * U, py1 - 8 * U);
+    }
+    ctx.restore();
+  }
+
   // ---- Intro: Step 0 and Step 0.2 --------------------------------------------------------
   const PACKAGES = ["duckdb", "numpy", "oracledb", "requests", "polars", "pandas", "PyYAML", "SQLAlchemy", "plotly", "pytest", "pyarrow", "scipy", "numba", "mlflow", "multiprocessing"];
   const DROP = 0.36;   // seconds between packages
@@ -419,7 +510,8 @@
     // Step 0: packages drop, one at a time, into the bot's crate
     const crate = { x: W * 0.64, y: H * 0.74, w: 380 * U };
     const installed = PACKAGES.filter((_, i) => local("0") > 3 + i * DROP + 0.5).length;
-    const k0 = Math.min(smooth((T - SHOT["0"].start) / 0.6), 1 - smooth((T - SHOT["0.2"].start - 0.2) / 0.8));
+    // gone by the cut, after its check lands (9.3), so Step 0.2's title card and its pause open on a clear stage
+    const k0 = Math.min(smooth((T - SHOT["0"].start) / 0.6), 1 - smooth((T - SHOT["0.2"].start + 0.6) / 0.6));
     if (k0 > 0) {
       ctx.save(); ctx.globalAlpha = A(k0);
       PACKAGES.forEach((name, i) => {
@@ -437,18 +529,19 @@
       roundRect(crate.x - bw / 2, by, Math.max(8 * U, (bw * installed) / PACKAGES.length), 8 * U, 4 * U); ctx.fillStyle = P.mint; ctx.fill();
       font(12.5 * U, 600); ctx.fillStyle = P.text;
       ctx.fillText(installed === PACKAGES.length ? "Dependencies installed" : `Installing dependencies · ${installed} of ${PACKAGES.length}`, crate.x, by - 10 * U);
-      if (installed === PACKAGES.length) check(crate.x - bw / 2 - 16 * U, by + 4 * U, 6 * U, ramp("0", 8.7, 9.3));
+      if (installed === PACKAGES.length) check(crate.x - bw / 2 - 16 * U, by + 4 * U, 6 * U, ramp("0", 8.7, 9.3), P.mint, k0);
       ctx.font = `italic 400 ${13 * U}px ${SERIF}`; ctx.fillStyle = P.dim;
       ctx.fillText("Dependency installation is bootstrapped and orchestrated, even on a cold start.", crate.x, by + 30 * U);
       ctx.restore();
     }
     // Step 0.2: last run's logs move, one at a time, into the archive
     if (after("0.2")) {
-      const k = smooth((local("0.2") - 2.6) / 0.6);
+      // in after the title card; gone by the cut, after its check lands (9.5), so Step 1 opens on a clear stage
+      const k = Math.min(smooth((local("0.2") - 2.6) / 0.6), 1 - smooth((T - SHOT["1"].start + 0.6) / 0.6));
       const win = { x: W * 0.47, y: H * 0.16, w: W * 0.26, h: H * 0.62 };
       const box = { x: W * 0.83, y: H * 0.6 };
       ctx.save(); ctx.globalAlpha = A(k);
-      panel(win.x, win.y, win.w, win.h);
+      panel(win.x, win.y, win.w, win.h, k);   // fades in with its contents, not before them
       font(11 * U, 600); ctx.fillStyle = P.gold; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.fillText("LOGS/", win.x + 14 * U, win.y + 24 * U);
       // the archive: a box with its lid, and what's gone into it
       ctx.strokeStyle = P.sand; ctx.lineWidth = 2 * U; ctx.fillStyle = "rgba(216,195,165,0.12)";
@@ -469,7 +562,7 @@
         ctx.fillText(m > 0 ? name : `2024-06-02  ${name}`, x, y);
         ctx.globalAlpha = A(k);
       });
-      if (archived === LOGS.length) { font(13 * U, 600); ctx.fillStyle = P.text; ctx.textAlign = "left"; ctx.fillText("Logs archived", win.x + 40 * U, win.y + win.h / 2); check(win.x + 22 * U, win.y + win.h / 2 - 4 * U, 7 * U, ramp("0.2", 8.9, 9.5)); }
+      if (archived === LOGS.length) { font(13 * U, 600); ctx.fillStyle = P.text; ctx.textAlign = "left"; ctx.fillText("Logs archived", win.x + 40 * U, win.y + win.h / 2); check(win.x + 22 * U, win.y + win.h / 2 - 4 * U, 7 * U, ramp("0.2", 8.9, 9.5), P.mint, k); }
       ctx.restore();
     }
     // the intro: the bot steps in from the left, then turns to face the work
@@ -879,13 +972,14 @@
     });
     show("5", (s) => {
       header("CONFIG FILES · CONFORMED TO THEIR .dist TEMPLATES", P.mint);
-      ["global_config", "prod_config", "batch_config"].forEach((name, i) => {
-        const y = sy + pad + (48 + i * 48) * u, k = smooth((s - 3.2 - i * 1.1) / 0.8), done = smooth((s - 4 - i * 1.1) / 0.4);
-        mono(9.5); ctx.textAlign = "left"; ctx.fillStyle = P.sand; ctx.fillText(`${name}.yaml.dist`, sx + pad, y);
+      mono(9.5); ctx.textAlign = "left"; ctx.fillStyle = P.dim; ctx.fillText("each config file", sx + pad, sy + sh / 2 - 24 * u);
+      [0].forEach((i) => {   // the configs as one pattern, not listed by name
+        const y = sy + sh / 2, k = smooth((s - 3.2 - i * 1.1) / 0.8), done = smooth((s - 4 - i * 1.1) / 0.4);
+        mono(9.5); ctx.textAlign = "left"; ctx.fillStyle = P.sand; ctx.fillText(".yaml.dist", sx + pad, y);
         const a0 = sx + pad + 150 * u, a1 = a0 + 34 * u, ax = lerp(a0, a1, k);
         ctx.strokeStyle = P.faint; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(a0, y - 3 * u); ctx.lineTo(ax, y - 3 * u); ctx.stroke();
         if (k > 0) { ctx.fillStyle = P.gold; ctx.beginPath(); ctx.moveTo(ax, y - 3 * u); ctx.lineTo(ax - 5 * u, y - 7 * u); ctx.lineTo(ax - 5 * u, y + 1 * u); ctx.fill(); }
-        ctx.globalAlpha = A(0.35 + 0.65 * k); ctx.fillStyle = P.text; ctx.fillText(`${name}.yaml`, a1 + 12 * u, y); ctx.globalAlpha = A(1);
+        ctx.globalAlpha = A(0.35 + 0.65 * k); ctx.fillStyle = P.text; ctx.fillText(".yaml", a1 + 12 * u, y); ctx.globalAlpha = A(1);
         check(sx + sw - pad - 10 * u, y - 4 * u, 5 * u, done);
       });
       tag("configs conform", sx + sw / 2, sy + sh - 14 * u, smooth((s - 7) / 0.5), P.mint, 9);
@@ -1179,6 +1273,7 @@
       }
     }
     if (say && head) bubble(head, say.text, say.alpha, side);
+    if (head && active("2.3")) thought(head, local("2.3"));
   }
 
   // ---- Outro: a black screen; the bot walks in from the right, waves and says thanks ----------------
@@ -1193,17 +1288,19 @@
   }
 
   // ---- The step's title, in the middle, fading in and out ------------------------------------------
+  // Story seconds: fade in, hold in the centre until `hold`, slide to the corner over `move`, fade out at the step's end.
+  const TITLE = { in: 0.4, hold: 1.25, move: 0.7, out: 0.35 };
   function drawTitle() {
     const { shot } = shotAt(T);
     const step = STEP[shot.step], begin = STEP_START[shot.step];
     if (!step) return;   // the intro and outro have no title card
     const end = Math.max(...SHOTS.filter((sh) => sh.step === shot.step).map((sh) => sh.start + sh.dur));
-    const s = T - begin, appear = smooth(s / 0.7), leave = smooth((end - T) / 0.5);
+    const s = T - begin, appear = smooth(s / TITLE.in), leave = smooth((end - T) / TITLE.out);
     const k = Math.min(appear, leave);
     if (k <= 0) return;
-    const move = smooth((s - 1.7) / 1.0);   // 0 in the centre, 1 settled in the corner
+    const move = smooth((s - TITLE.hold) / TITLE.move);   // 0 in the centre, 1 settled in the corner
     // a light veil while the title holds the centre, lifting as it moves away: the scene keeps moving underneath
-    ctx.save(); ctx.globalAlpha = appear * (1 - move); ctx.fillStyle = "rgba(2,12,9,0.18)"; ctx.fillRect(0, 0, W, H); ctx.restore();
+    ctx.save(); ctx.globalAlpha = appear * (1 - move); ctx.fillStyle = "rgba(2,12,9,0.12)"; ctx.fillRect(0, 0, W, H); ctx.restore();
     font(30 * U, 600, SERIF);
     const w = Math.max(ctx.measureText(step.title).width + 70 * U, 260 * U), h = 104 * U;
     const scale = lerp(1, 0.48, move);
@@ -1259,8 +1356,10 @@
   let stopAt = null;     // in step mode, where the current play stops
   let tape = null;       // a rewind or fast forward under way: { from, to, begin, dur, dir }
 
-  // Step through stops at every step and substep boundary (a step's extra shots, like 1.7b, play on through)
-  const STOPS = [...new Set([...Object.values(STEP_START), TOTAL])].sort((a, b) => a - b);
+  // Step through stops on every step's and substep's title card, fully in and centred, so the controls always
+  // sit over the step's introduction (a step's extra shots, like 1.7b, play on through; the intro stops at 0)
+  const stopFor = (id) => STEP_START[id] + (STEP[id] ? (TITLE.in + TITLE.hold) / 2 : 0);
+  const STOPS = [...new Set([...Object.keys(STEP_START).map(stopFor), TOTAL])].sort((a, b) => a - b);
   const nextStop = (t) => STOPS.find((x) => x > t + 0.05) ?? TOTAL;
   const prevStop = (t) => [...STOPS].reverse().find((x) => x < t - 0.05) ?? 0;
   const stepName = (key) => (key === "intro" ? "the intro" : key === "outro" ? "the outro" : `Step ${key}`);
@@ -1269,7 +1368,7 @@
   function sync() {
     const { i, shot } = shotAt(T);
     el.scrub.value = Math.round((T / TOTAL) * 1000);
-    el.time.textContent = `${clock(T)} / ${clock(TOTAL)}`;
+    el.time.textContent = `${clock(T / PACE)} / ${clock(TOTAL / PACE)}`;
     if (i !== shown) {
       shown = i;
       el.narration.textContent = shot.text;
@@ -1326,7 +1425,7 @@
     }
     if (!playing) return;
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
-    T = Math.min(TOTAL, T + dt * Number(el.speed.value));
+    T = Math.min(TOTAL, T + dt * PACE * Number(el.speed.value));
     if (stopAt !== null && T >= stopAt) T = stopAt;
     render();
     if (T >= TOTAL || (stopAt !== null && T >= stopAt)) { setPlaying(false); sync(); if (T >= TOTAL && mode === "all") choose(); return; }
@@ -1391,7 +1490,7 @@
 
   resize();
   const hash = new URLSearchParams(location.hash.slice(1));
-  if (hash.has("t")) { el.choose.hidden = true; mode = "all"; seek(Number(hash.get("t")) || 0); } else seek(0);
+  if (hash.has("t")) { el.choose.hidden = true; mode = "all"; seek((Number(hash.get("t")) || 0) * PACE); } else seek(0);
   if (document.fonts) document.fonts.ready.then(render);
   window.PipelineStory = { seek, total: TOTAL, steps: STEPS, shots: SHOTS.map(({ key, step, start, dur }) => ({ key, step, start, dur })), data: DATA };
 })();

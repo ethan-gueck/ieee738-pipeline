@@ -94,8 +94,7 @@
           Each conductor's metadata (type, diameter, resistance, emissivity and absorptivity, its maximum operating
           temperature) is joined to the structures that carry it, span by span. The nearest NOAA station supplies the
           weather the heat balance needs: sunlight, whether the air is clear or industrial, wind speed and direction,
-          and air temperature. Wind decides the convection model: with wind the conductor is cooled by forced
-          convection; in still air, by natural convection. A line has a substation at each end; the pipeline maps both
+          and air temperature. A line has a substation at each end; the pipeline maps both
           to the conductor and uses the amperage from the one whose readings vary most, the higher standard deviation
           <span class="formula">σ = √(Σ(<i>x</i> − <i>x̄</i>)² / <i>n</i>)</span>, because a flat series can hide the
           load swings that heat and cool the line.
@@ -108,6 +107,9 @@
           balance for every conductor and hour: the heat the conductor sheds by convection and radiation equals the heat
           it gains from the sun and from its own resistance,
           <span class="formula"><i>q</i><sub>c</sub> + <i>q</i><sub>r</sub> = <i>q</i><sub>s</sub> + <i>I</i>²<i>R</i>(<i>T</i><sub>c</sub>)</span>.
+          Wind decides the convection model: with wind the conductor is cooled by forced convection; in still air, by
+          natural convection. For each hour an optimizer, COBYLA, converges on the conductor temperature
+          <i>T</i><sub>c</sub> that balances the two sides.
         </p>
 
         <h3>Thermal cycles</h3>
@@ -121,8 +123,7 @@
         <h3>Optional steps</h3>
         <p>
           Steps 4, 6 and 7 are for validation: CSV copies of the results, a dashboard of the temperatures, and the
-          run's resource metrics. Step 5 conforms each config to its .dist template: global_config.yaml.dist →
-          global_config.yaml, prod_config.yaml.dist → prod_config.yaml and batch_config.yaml.dist → batch_config.yaml.
+          run's resource metrics. Step 5 conforms each config file to its .dist template.
         </p>
         <p class="notes__small">
           The animation's numbers are illustrative: one conductor over 100 hours, with a one-line stand-in for the heat
