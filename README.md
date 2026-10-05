@@ -17,7 +17,7 @@ The pipeline estimates the temperature of every overhead transmission conductor 
 | 1.6 | Finds the two nearest substations and maps them to the conductor |
 | 1.7 | Of the two substations, pulls data from the one with the highest standard deviation |
 | 1.8 | Loads metadata to the database |
-| 2 | Overrides the .dist batch scripts from the .yaml configs |
+| 2 | Runs every Step 2 substep |
 | 2.0 | Flight check on date ranges: metadata, weather data, amperage data |
 | 2.1 | Clears out old temperature data |
 | 2.2 | Creates temperature data tables if needed |
@@ -26,8 +26,8 @@ The pipeline estimates the temperature of every overhead transmission conductor 
 | 2.5 | Cleans up the historian, or points to it when thermal cycles must initialize from a half cycle (thermal cycle stitching) |
 | 2.6 | Calculates thermal cycles and the thermal cycle summary table |
 | 4 | Converts files to CSV for viewing (optional validation) |
-| 5 | Conforms the .dist and .yaml files (optional configuration) |
-| 6 | Visualizes temperature results (optional validation) |
+| 5 | Conforms each config to its .dist template: global_config, prod_config, batch_config (optional configuration) |
+| 6 | Visualizes temperature results on a dashboard (optional validation) |
 | 7 | Visualizes resource metrics (optional validation) |
 
 A thermal cycle is an up event of 35 °C followed by a down event of 35 °C.

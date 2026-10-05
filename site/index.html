@@ -37,13 +37,31 @@
       The pipeline estimates the temperature of every overhead transmission conductor in a network, hour by hour,
       with the IEEE Std 738 heat balance, and counts the thermal cycles each one goes through. Step 1 gathers the
       inputs: the conductor and its structures, the nearest NOAA weather station, and the amperage from the busier of
-      the two substations at the line's ends. Step 2 calculates. Press play to follow the line risk bot through a run.
+      the two substations at the line's ends. Step 2 calculates. Choose <strong>Play all</strong> to follow the line risk bot
+      through a run, or <strong>Step through</strong> to pause after every step and substep.
     </p>
 
     <figure class="story">
       <div class="stage">
         <canvas id="story" role="img" aria-label="Animated walkthrough of the IEEE 738 thermal pipeline"></canvas>
-        <button id="story-run" class="stage__run" type="button">▶ Run the pipeline</button>
+        <div id="story-corner" class="stage__corner" role="group" aria-label="Playback" hidden>
+          <button id="story-reset" class="stage__icon" type="button" aria-label="Reset to the start" title="Reset">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg>
+          </button>
+          <button id="story-toggle" class="stage__icon" type="button" aria-label="Play" title="Play">
+            <svg class="stage__icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>
+            <svg class="stage__icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.5v13M15.5 5.5v13"/></svg>
+          </button>
+        </div>
+        <div id="story-choose" class="stage__choose" role="group" aria-label="How to watch">
+          <button id="story-play-all" class="stage__run" type="button">▶ Play all</button>
+          <button id="story-step-through" class="stage__run stage__run--alt" type="button">Step through</button>
+        </div>
+        <div id="story-stepper" class="stage__stepper" role="group" aria-label="Step controls" hidden>
+          <button id="story-prev" class="stage__ctl" type="button">◀◀ Previous</button>
+          <button id="story-step-play" class="stage__ctl stage__ctl--primary" type="button">▶ Play</button>
+          <button id="story-next" class="stage__ctl" type="button">Next ▶▶</button>
+        </div>
       </div>
       <p class="narration" id="story-narration" aria-live="polite"></p>
       <div class="transport">
@@ -85,8 +103,8 @@
 
         <h3>Step 2 calculates temperatures and thermal cycles</h3>
         <p>
-          The .dist batch scripts are overridden with the run's settings from the .yaml configs, and a flight check
-          confirms the metadata, weather and amperage cover the same dates. Then the pipeline solves the IEEE 738 heat
+          Step 2 runs every substep in turn. A flight check confirms the metadata, weather and amperage cover the same
+          dates. Then the pipeline solves the IEEE 738 heat
           balance for every conductor and hour: the heat the conductor sheds by convection and radiation equals the heat
           it gains from the sun and from its own resistance,
           <span class="formula"><i>q</i><sub>c</sub> + <i>q</i><sub>r</sub> = <i>q</i><sub>s</sub> + <i>I</i>²<i>R</i>(<i>T</i><sub>c</sub>)</span>.
@@ -102,8 +120,9 @@
 
         <h3>Optional steps</h3>
         <p>
-          Steps 4, 6 and 7 are for validation: CSV copies of the results, plots of the temperatures, and the run's
-          resource metrics. Step 5 conforms the .dist and .yaml files.
+          Steps 4, 6 and 7 are for validation: CSV copies of the results, a dashboard of the temperatures, and the
+          run's resource metrics. Step 5 conforms each config to its .dist template: global_config.yaml.dist →
+          global_config.yaml, prod_config.yaml.dist → prod_config.yaml and batch_config.yaml.dist → batch_config.yaml.
         </p>
         <p class="notes__small">
           The animation's numbers are illustrative: one conductor over 100 hours, with a one-line stand-in for the heat

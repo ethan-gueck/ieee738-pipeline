@@ -3,7 +3,8 @@
  *
  * Three layers share one canvas, each with its own camera:
  *   intro  the line risk bot (a classic square-headed robot in a Waldo hat and
- *          glasses) installs its dependencies and archives the last run's logs;
+ *          glasses) walks in from the left, offers the tour, installs its
+ *          dependencies and archives the last run's logs;
  *   map    the lower 48 states, settling on Virginia;
  *   land   a side view of one line in Virginia: the NOAA weather station, the
  *          two substations at the line's ends, the towers and conductors
@@ -12,6 +13,9 @@
  * Every shot runs in beats: the step's title fades in and out in the middle,
  * then the camera moves, then one thing at a time animates while the bot asks
  * its question. Only the weather station's instruments keep moving on their own.
+ * After Step 7 the bot walks off, then walks onto a black outro to say thanks.
+ * Play all runs straight through; Step through pauses at the end of every step
+ * and substep, with Previous (rewind), Play and Next (fast forward).
  * Open the page with #t=42 to start 42 seconds in.
  */
 (function () {
@@ -31,7 +35,7 @@
     { id: "1.6", title: "Map the two nearest substations", group: "Step 1 · Gather the inputs" },
     { id: "1.7", title: "Keep the substation with the highest σ", group: "Step 1 · Gather the inputs" },
     { id: "1.8", title: "Load metadata to the database", group: "Step 1 · Gather the inputs" },
-    { id: "2", title: "Override the batch scripts", group: "Step 2 · Temperatures and thermal cycles" },
+    { id: "2", title: "Run every Step 2 substep", group: "Step 2 · Temperatures and thermal cycles" },
     { id: "2.0", title: "Flight check the date ranges", group: "Step 2 · Temperatures and thermal cycles" },
     { id: "2.1", title: "Clear old temperature data", group: "Step 2 · Temperatures and thermal cycles" },
     { id: "2.2", title: "Create temperature tables if needed", group: "Step 2 · Temperatures and thermal cycles" },
@@ -126,8 +130,10 @@
   const WIDE = { space: "land", x: 1110, z: 0.4 };
   const WORK = { space: "land", x: 2440, z: 1.45 };
   const SHOTS = [
-    { key: "0", step: "0", dur: 10, title: true, cam: [], say: [[3, 6.2, "First, my tools."]],
-      text: "Step 0 installs the pipeline's dependencies." },
+    { key: "intro", step: "intro", dur: 8.5, cam: [], say: [[3.8, 7.8, "Let me give you the tour of the line risk project."]],
+      text: "The line risk bot gives a tour of the line risk project." },
+    { key: "0", step: "0", dur: 10, title: true, cam: [], say: [[3, 6.2, "First, let me get my tools."]],
+      text: "Step 0 installs the pipeline's dependencies. Installation is bootstrapped and orchestrated, even on a cold start." },
     { key: "0.2", step: "0.2", dur: 11, title: true, cam: [], say: [[3.4, 6.8, "Archiving the last run's logs."]],
       text: "Step 0.2 archives the logs from the last run, so this run starts with a clean slate and the old ones are kept." },
     { key: "1", step: "1", dur: 12, title: true, cam: [{ a: 2.6, b: 4.2, ...US }, { a: 7.4, b: 10.4, ...VA }], say: [[7.4, 10.6, "Where is this line?"]],
@@ -140,8 +146,8 @@
       text: "Step 1.3 maps every conductor span onto the structures that carry it." },
     { key: "1.4", step: "1.4", dur: 11, title: true, cam: [{ a: 2.6, b: 5.4, space: "land", x: 150, z: 0.5 }], say: [[5.6, 8.6, "Where's the nearest weather station?"]],
       text: "Step 1.4 finds the NOAA weather station nearest the line." },
-    { key: "1.5", step: "1.5", dur: 24.5, title: true, cam: [{ a: 2.6, b: 5.2, space: "land", x: -700, z: 2.05 }],
-      say: [[6, 9, "How strong is the sun?"], [11, 14, "Is the air clear or industrial?"], [16.6, 19.6, "What is the wind speed?"], [20.6, 24, "I need to decide between forced and natural convection."]],
+    { key: "1.5", step: "1.5", dur: 22, title: true, cam: [{ a: 2.6, b: 5.2, space: "land", x: -700, z: 2.05 }],
+      say: [[6, 9, "How strong is the sun?"], [11, 14, "Is the air clear or industrial?"], [16.6, 19.6, "What is the wind speed?"]],
       text: "Step 1.5 pulls the station's weather: sunlight, clear or industrial air, wind speed and direction, and air temperature." },
     { key: "1.6", step: "1.6", dur: 18, title: true,
       cam: [{ a: 2.6, b: 5, ...WIDE, x: 400, z: 0.42 }, { a: 5.4, b: 7.4, space: "land", x: 900, z: 1.3 }, { a: 7.8, b: 11.4, space: "land", x: 1780, z: 1.3 }, { a: 13.8, b: 16.4, ...WIDE }],
@@ -152,16 +158,16 @@
     { key: "1.7b", step: "1.7", dur: 9, cam: [{ a: 0.3, b: 3.3, space: "land", x: 95, z: 3.1 }], say: [[3.6, 6.6, "Amperage, every hour."]],
       text: "Inside Substation A, the amperage the conductor carries is recorded every hour." },
     { key: "1.8", step: "1.8", dur: 13, title: true, cam: [{ a: 2.6, b: 4.6, ...WIDE, x: 1300, z: 0.4 }, { a: 4.8, b: 8, ...WORK }], say: [[10, 12.8, "Saving it all to the database."]],
-      text: "Step 1.8 loads the conductor, structure, weather and amperage metadata into the database." },
-    { key: "2", step: "2", dur: 10, title: true, cam: [], say: [[3, 6, "Setting this run's batch scripts."]],
-      text: "Step 2 overrides the .dist batch scripts with this run's settings from the .yaml configs." },
+      text: "Step 1.8 loads the conductor, structure, weather and substation mapping metadata into the database." },
+    { key: "2", step: "2", dur: 10, title: true, cam: [], say: [[6.4, 9.4, "Now for the calculations."]],
+      text: "Step 2 runs every substep that calculates the conductor's temperatures and thermal cycles." },
     { key: "2.0", step: "2.0", dur: 10, title: true, cam: [], say: [[3, 6, "Do all the dates line up?"]],
       text: "Step 2.0 runs a flight check: do the metadata, weather and amperage cover the same dates?" },
     { key: "2.1", step: "2.1", dur: 8, title: true, cam: [], say: [[3, 5.8, "Out with the old temperatures."]],
       text: "Step 2.1 clears out the old temperature data." },
     { key: "2.2", step: "2.2", dur: 8, title: true, cam: [], say: [[3, 5.8, "Making sure the tables exist."]],
       text: "Step 2.2 creates the temperature tables if they don't exist." },
-    { key: "2.3", step: "2.3", dur: 15, title: true, cam: [], say: [[3, 6, "How hot is the conductor?"], [8.5, 12, "Heat in equals heat out, every hour."]],
+    { key: "2.3", step: "2.3", dur: 15, title: true, cam: [], say: [[3, 6, "How hot is the conductor?"]],
       text: "Step 2.3 calculates the conductor's temperature hour by hour from the IEEE 738 heat balance." },
     { key: "2.4", step: "2.4", dur: 9, title: true, cam: [], say: [[3, 6, "Fresh thermal cycle tables."]],
       text: "Step 2.4 drops and recreates the thermal cycle detail and summary tables." },
@@ -171,12 +177,14 @@
       text: "Step 2.6 counts thermal cycles: an up event of 35 °C, then a down event of 35 °C." },
     { key: "4", step: "4", dur: 8, title: true, cam: [], say: [[3, 5.8, "CSV copies, for checking."]],
       text: "Optional Step 4 converts the results to CSV for checking by eye." },
-    { key: "5", step: "5", dur: 9, title: true, cam: [], say: [[3, 6, "Do the dist and config files conform?"]],
-      text: "Optional Step 5 conforms the .dist batch scripts and the .yaml config files." },
-    { key: "6", step: "6", dur: 9, title: true, cam: [], say: [[3, 6, "Here's how hot it ran."]],
-      text: "Optional Step 6 visualizes the temperature results." },
-    { key: "7", step: "7", dur: 10, title: true, cam: [], say: [[3, 6, "And what the run used."], [7.4, 10, "Pipeline complete."]],
+    { key: "5", step: "5", dur: 10, title: true, cam: [], say: [[3, 6, "Do the configs match their templates?"]],
+      text: "Optional Step 5 conforms each .yaml config to its .dist template: global_config, prod_config and batch_config." },
+    { key: "6", step: "6", dur: 13, title: true, cam: [], say: [[3, 6, "Here's how hot it ran."], [8.8, 11.8, "All on one dashboard."]],
+      text: "Optional Step 6 visualizes the temperature results on a dashboard." },
+    { key: "7", step: "7", dur: 14, title: true, cam: [], say: [[3, 6, "And what the run used."], [7.4, 10, "Pipeline complete."]],
       text: "Optional Step 7 visualizes the resources the run used. The pipeline is done." },
+    { key: "outro", step: "outro", dur: 9, cam: [], say: [[4.6, 8.4, "Thank you for watching."]],
+      text: "Thank you for watching." },
   ];
   let TOTAL = 0;
   SHOTS.forEach((shot) => { shot.start = TOTAL; TOTAL += shot.dur; });
@@ -403,7 +411,7 @@
   // ---- Intro: Step 0 and Step 0.2 --------------------------------------------------------
   const PACKAGES = ["duckdb", "numpy", "oracledb", "requests", "polars", "pandas", "PyYAML", "SQLAlchemy", "plotly", "pytest", "pyarrow", "scipy", "numba", "mlflow", "multiprocessing"];
   const DROP = 0.36;   // seconds between packages
-  const LOGS = ["step1.log", "step2.log", "weather.log", "amperage.log", "cycles.log", "errors.log"];
+  const LOGS = ["pipeline.log", "debug.log", "batch.log", "testing.log"];
   function drawIntro(alpha) {
     if (alpha <= 0) return;
     ctx.save(); ctx.globalAlpha = alpha; layerAlpha = alpha;
@@ -411,7 +419,7 @@
     // Step 0: packages drop, one at a time, into the bot's crate
     const crate = { x: W * 0.64, y: H * 0.74, w: 380 * U };
     const installed = PACKAGES.filter((_, i) => local("0") > 3 + i * DROP + 0.5).length;
-    const k0 = 1 - smooth((T - SHOT["0.2"].start - 0.2) / 0.8);
+    const k0 = Math.min(smooth((T - SHOT["0"].start) / 0.6), 1 - smooth((T - SHOT["0.2"].start - 0.2) / 0.8));
     if (k0 > 0) {
       ctx.save(); ctx.globalAlpha = A(k0);
       PACKAGES.forEach((name, i) => {
@@ -430,6 +438,8 @@
       font(12.5 * U, 600); ctx.fillStyle = P.text;
       ctx.fillText(installed === PACKAGES.length ? "Dependencies installed" : `Installing dependencies · ${installed} of ${PACKAGES.length}`, crate.x, by - 10 * U);
       if (installed === PACKAGES.length) check(crate.x - bw / 2 - 16 * U, by + 4 * U, 6 * U, ramp("0", 8.7, 9.3));
+      ctx.font = `italic 400 ${13 * U}px ${SERIF}`; ctx.fillStyle = P.dim;
+      ctx.fillText("Dependency installation is bootstrapped and orchestrated, even on a cold start.", crate.x, by + 30 * U);
       ctx.restore();
     }
     // Step 0.2: last run's logs move, one at a time, into the archive
@@ -462,9 +472,13 @@
       if (archived === LOGS.length) { font(13 * U, 600); ctx.fillStyle = P.text; ctx.textAlign = "left"; ctx.fillText("Logs archived", win.x + 40 * U, win.y + win.h / 2); check(win.x + 22 * U, win.y + win.h / 2 - 4 * U, 7 * U, ramp("0.2", 8.9, 9.5)); }
       ctx.restore();
     }
-    const head = drawBot(W * 0.24, H * 0.86, H * 0.52, { look: [1, -0.4], talking: !!speech(), arms: [0.3, after("0.2") ? 0.5 : 0.3] });
+    // the intro: the bot steps in from the left, then turns to face the work
+    const walkIn = ramp("intro", 0.4, 3.4), bx = lerp(-90 * U, W * 0.24, walkIn);
+    const head = drawBot(bx, H * 0.86, H * 0.52, { walk: walkIn > 0 && walkIn < 1, look: walkIn < 1 ? [1, 0] : [1, -0.4], talking: !!speech(), arms: [0.3, after("0.2") ? 0.5 : 0.3] });
+    ctx.save(); ctx.globalAlpha = A(smooth((walkIn - 0.85) / 0.15));
     font(17 * U, 600, SERIF); ctx.fillStyle = P.text; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
     ctx.fillText("The line risk bot", W * 0.24, Math.min(H - 8 * U, H * 0.86 + 26 * U));
+    ctx.restore();
     ctx.restore();
     layerAlpha = 1;
     return head;
@@ -502,21 +516,26 @@
     ctx.beginPath(); ctx.arc(X(SITE[0]), Y(SITE[1]), 8 * U, 0, Math.PI * 2); ctx.strokeStyle = P.gold; ctx.lineWidth = 1.5 * U; ctx.stroke();
     // Step 1's substeps, listed one at a time
     const k = active("1") ? span("1", 4.2) : 0;
-    if (k > 0) {
-      const rows = STEPS.filter((s) => /^1\.\d$/.test(s.id));
-      const x = 18 * U, h = (34 + rows.length * 19) * U, y = H - h - 18 * U;
-      panel(x, y, 300 * U, h, k);
-      ctx.save(); ctx.globalAlpha = A(k);
-      font(11 * U, 600); ctx.fillStyle = P.gold; ctx.textAlign = "left"; ctx.fillText("STEP 1 RUNS EVERY SUBSTEP", x + 12 * U, y + 22 * U);
-      rows.forEach((s, i) => {
-        ctx.globalAlpha = A(k * ramp("1", 4.4 + i * 0.32, 4.8 + i * 0.32));
-        font(12 * U, 600); ctx.fillStyle = P.sand; ctx.fillText(s.id, x + 12 * U, y + (42 + i * 19) * U);
-        font(12 * U); ctx.fillStyle = P.text; ctx.fillText(s.title, x + 46 * U, y + (42 + i * 19) * U);
-      });
-      ctx.restore();
-    }
+    if (k > 0) { const h = substepsHeight("1", U); substeps("1", 18 * U, H - h - 18 * U, 300 * U, k, 4.4, U); }
     ctx.restore();
     layerAlpha = 1;
+  }
+
+  /** A step's substeps, listed one at a time from local second t0 of its shot: Step 1 over the map, Step 2 on the calculator. */
+  const substepRows = (id) => STEPS.filter((s) => s.id.startsWith(`${id}.`));
+  const substepsHeight = (id, u) => (34 + substepRows(id).length * 19) * u;
+  function substeps(id, x, y, w, k, t0, u) {
+    const rows = substepRows(id), h = substepsHeight(id, u);
+    panel(x, y, w, h, k);
+    ctx.save(); ctx.globalAlpha = A(k);
+    font(11 * u, 600); ctx.fillStyle = P.gold; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillText(`STEP ${id} RUNS EVERY SUBSTEP`, x + 12 * u, y + 22 * u);
+    rows.forEach((s, i) => {
+      ctx.globalAlpha = A(k * ramp(id, t0 + i * 0.32, t0 + 0.4 + i * 0.32));
+      font(12 * u, 600); ctx.fillStyle = P.sand; ctx.fillText(s.id, x + 12 * u, y + (42 + i * 19) * u);
+      font(12 * u); ctx.fillStyle = P.text; ctx.fillText(s.title, x + 46 * u, y + (42 + i * 19) * u);
+    });
+    ctx.restore();
   }
 
   // ---- Landscape ---------------------------------------------------------------------------------
@@ -677,18 +696,14 @@
     ctx.strokeStyle = "#AEB9B3"; ctx.lineWidth = Math.max(1, L(1.2)); ctx.stroke();
     ctx.beginPath(); ctx.arc(X(d - 14), Y(-52), L(9), Math.PI * 1.1, Math.PI * 1.6); ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = Math.max(1, L(2)); ctx.stroke();
     ctx.fillStyle = "#7E8C85"; ctx.fillRect(X(d - 8), Y(-18), L(16), L(18));
-    // radar: a lattice mast and a dish that keeps turning
+    // radar: a lattice mast, a post on top, and a dish turning on the post
     const r = STATION.radar;
     ctx.strokeStyle = P.steel; ctx.lineWidth = Math.max(1, L(2)); ctx.beginPath();
     ctx.moveTo(X(r - 14), Y(0)); ctx.lineTo(X(r - 6), Y(-96)); ctx.moveTo(X(r + 14), Y(0)); ctx.lineTo(X(r + 6), Y(-96));
-    for (const h of [-24, -48, -72]) { ctx.moveTo(X(r - 14 + 8 * (-h / 96)), Y(h)); ctx.lineTo(X(r + 14 - 8 * (-h / 96)), Y(h)); }
+    for (const h of [-24, -48, -72, -96]) { ctx.moveTo(X(r - 14 + 8 * (-h / 96)), Y(h)); ctx.lineTo(X(r + 14 - 8 * (-h / 96)), Y(h)); }
     ctx.stroke();
-    const spin = Math.cos(T * 1.2);
-    ctx.save(); ctx.translate(X(r), Y(-108));
-    ctx.beginPath(); ctx.ellipse(0, 0, L(26) * Math.max(0.12, Math.abs(spin)), L(20), 0.25, 0, Math.PI * 2);
-    ctx.fillStyle = spin > 0 ? "#EEF1EF" : "#C7CFCA"; ctx.fill(); ctx.strokeStyle = "#AEB9B3"; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(L(16) * spin, L(-6)); ctx.strokeStyle = P.steel; ctx.lineWidth = Math.max(1, L(1.6)); ctx.stroke();
-    ctx.restore();
+    ctx.fillStyle = P.steel; ctx.fillRect(X(r - 2.5), Y(-110), L(5), L(14));
+    drawDish(r, -110);
     // windsock: fills out while the wind blows in Step 1.5
     const s = STATION.sock, blow = active("1.5") ? Math.min(smooth((local("1.5") - 16.8) / 1), smooth((21 - local("1.5")) / 1)) : 0;
     ctx.strokeStyle = P.steel; ctx.lineWidth = Math.max(1, L(2)); ctx.beginPath(); ctx.moveTo(X(s), Y(0)); ctx.lineTo(X(s), Y(-84)); ctx.stroke();
@@ -713,6 +728,34 @@
     }
   }
 
+  /**
+   * The radar dish, turning about the post at (hx, hy). The bowl is drawn in 3-D and projected: the fan from its
+   * vertex (on the post) to every rim point always covers the vertex, so the dish never comes away from the post,
+   * and its shade follows how far it faces the viewer instead of flipping.
+   */
+  function drawDish(hx, hy) {
+    const th = T * 0.9, el = 0.42, R = 22, depth = 8, n = 28;
+    const f = [Math.cos(th) * Math.cos(el), Math.sin(el), Math.sin(th) * Math.cos(el)];   // facing: x, up, toward the viewer
+    const u1 = [-Math.sin(th), 0, Math.cos(th)], u2 = [-Math.cos(th) * Math.sin(el), Math.cos(el), -Math.sin(th) * Math.sin(el)];
+    const at = (d, a, b) => [X(hx + f[0] * d + u1[0] * a + u2[0] * b), Y(hy - (f[1] * d + u1[1] * a + u2[1] * b))];
+    const rim = Array.from({ length: n }, (_, i) => { const p = (i / n) * Math.PI * 2; return at(depth, R * Math.cos(p), R * Math.sin(p)); });
+    const vertex = at(0, 0, 0), facing = (f[2] + 1) / 2;
+    const feed = () => {
+      const [x0, y0] = at(depth, 0, 0), [x1, y1] = at(depth + 14, 0, 0);
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.strokeStyle = P.steel; ctx.lineWidth = Math.max(1, L(1.6)); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x1, y1, Math.max(1.2, L(2.2)), 0, Math.PI * 2); ctx.fillStyle = P.steel; ctx.fill();
+    };
+    if (f[2] < 0) feed();   // facing away: the feed arm is behind the bowl
+    ctx.beginPath();
+    rim.forEach((p, i) => { const q = rim[(i + 1) % n]; ctx.moveTo(...vertex); ctx.lineTo(...p); ctx.lineTo(...q); ctx.closePath(); });
+    ctx.fillStyle = mix("#B4BEB8", "#EEF1EF", facing); ctx.fill();
+    ctx.beginPath(); rim.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p))); ctx.closePath();
+    ctx.fillStyle = `rgba(255,255,255,${0.35 * facing})`; ctx.fill();
+    ctx.strokeStyle = "#AEB9B3"; ctx.lineWidth = Math.max(1, L(1.4)); ctx.stroke();
+    if (f[2] >= 0) feed();
+    ctx.beginPath(); ctx.arc(...vertex, Math.max(1.5, L(3)), 0, Math.PI * 2); ctx.fillStyle = P.steel; ctx.fill();
+  }
+
   function drawDesk() {
     ctx.fillStyle = P.desk; ctx.fillRect(X(DESK.x + 40), Y(-44), L(440), L(8));
     ctx.fillStyle = P.leg; ctx.fillRect(X(DESK.x + 60), Y(-36), L(10), L(36)); ctx.fillRect(X(DESK.x + 450), Y(-36), L(10), L(36));
@@ -733,7 +776,7 @@
     ctx.beginPath(); ctx.moveTo(cx - rx, Y(top)); ctx.lineTo(cx - rx, Y(top + h)); ctx.moveTo(cx + rx, Y(top)); ctx.lineTo(cx + rx, Y(top + h)); ctx.stroke();
     font(Math.max(6, L(9)), 600); ctx.fillStyle = P.dim; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.fillText("database", cx, Y(top - 14));
     if (active("1.8")) {   // Step 1.8: the four kinds of metadata go in, one at a time
-      ["conductors", "structures", "weather", "amperage"].forEach((name, i) => {
+      ["conductors", "structures", "weather", "substation mapping"].forEach((name, i) => {
         const k = ramp("1.8", 10 + i * 0.6, 10.7 + i * 0.6);
         if (k <= 0 || k >= 1) return;
         const sx = lerp(DESK.x - 160, DB.x, k), sy = lerp(-150, top - 6, k) - Math.sin(k * Math.PI) * 50;
@@ -754,20 +797,7 @@
     const header = (title, color = P.gold) => { font(f(10), 600); ctx.fillStyle = color; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.fillText(title, sx + pad, sy + pad + 6 * u); };
     const show = (key, draw) => { const k = screenAlpha(key); if (k <= 0) return; ctx.save(); layerAlpha *= k; ctx.globalAlpha = A(1); draw(local(key)); layerAlpha /= k; ctx.restore(); };
 
-    show("2", (s) => {
-      header("BATCH SCRIPTS (.dist) · OVERRIDDEN FROM THE CONFIGS (.yaml)");
-      const rows = [["pipeline.yaml", "step1_batch.dist", "--station noaa --substations 2"], ["temperatures.yaml", "step2_batch.dist", "--start 2020-01-01 --end 2024-12-31"],
-        ["thermal_cycles.yaml", "cycles_batch.dist", "--threshold 35 --stitch historian"]];
-      rows.forEach(([cfg, dist, args], i) => {
-        const y = sy + pad + (40 + i * 52) * u, k = smooth((s - 3.2 - i * 1.1) / 0.8);
-        mono(9); ctx.fillStyle = P.mint; ctx.textAlign = "left"; ctx.fillText(cfg, sx + pad, y);
-        const a0 = sx + pad + 112 * u, a1 = a0 + 26 * u;
-        ctx.strokeStyle = P.faint; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(a0, y - 3 * u); ctx.lineTo(lerp(a0, a1, k), y - 3 * u); ctx.stroke();
-        if (k > 0) { ctx.fillStyle = P.gold; ctx.beginPath(); const ax = lerp(a0, a1, k); ctx.moveTo(ax, y - 3 * u); ctx.lineTo(ax - 5 * u, y - 7 * u); ctx.lineTo(ax - 5 * u, y + 1 * u); ctx.fill(); }
-        ctx.fillStyle = P.text; ctx.fillText(dist, a1 + 10 * u, y);
-        mono(8); ctx.globalAlpha = A(0.35 + 0.65 * k); ctx.fillStyle = k > 0.5 ? P.sand : P.faint; ctx.fillText(k > 0.5 ? args : "--defaults", a1 + 10 * u, y + 15 * u); ctx.globalAlpha = A(1);
-      });
-    });
+    show("2", () => substeps("2", sx + pad, sy + (sh - substepsHeight("2", u)) / 2, sw - pad * 2, 1, 3.4, u));
     show("2.0", (s) => {
       header("FLIGHT CHECK · DATE RANGES");
       const rows = [["Conductor metadata", "2020-01-01 → 2024-12-31"], ["Structure metadata", "2020-01-01 → 2024-12-31"], ["Weather (NOAA)", "2020-01-01 → 2024-12-31"],
@@ -814,9 +844,9 @@
       table(s, true);
       tag("tables ready", sx + sw / 2, sy + sh - 16 * u, smooth((s - 6) / 0.5), P.mint, 9);
     });
-    for (const key of ["2.3", "2.5", "2.6", "6"]) {
+    for (const key of ["2.3", "2.5", "2.6"]) {
       show(key, (s) => {
-        header({ "2.3": "CONDUCTOR TEMPERATURE · IEEE 738 HEAT BALANCE", "2.5": "HISTORIAN · THERMAL CYCLE STITCHING", "2.6": "THERMAL CYCLES · ±35 °C EVENTS", "6": "TEMPERATURE RESULTS · OPTIONAL VALIDATION" }[key], key === "6" ? P.mint : P.gold);
+        header({ "2.3": "CONDUCTOR TEMPERATURE · IEEE 738 HEAT BALANCE", "2.5": "HISTORIAN · THERMAL CYCLE STITCHING", "2.6": "THERMAL CYCLES · ±35 °C EVENTS" }[key]);
         chart(key, s, sx + pad, sy + pad + 18 * u, sw - pad * 2, sh - pad * 2 - 18 * u, u);
       });
     }
@@ -848,15 +878,19 @@
       });
     });
     show("5", (s) => {
-      header("DIST AND CONFIG FILES · OPTIONAL CONFIGURATION", P.mint);
-      const files = ["step1_batch.dist", "step2_batch.dist", "cycles_batch.dist", "pipeline.yaml", "weather.yaml", "substations.yaml", "temperatures.yaml", "thermal_cycles.yaml"];
-      files.forEach((file, i) => {
-        const col = i < 3 ? 0 : 1, row = i < 3 ? i : i - 3;
-        const x = sx + pad + col * (sw / 2), y = sy + pad + (38 + row * 28) * u, k = smooth((s - 3 - i * 0.55) / 0.5);
-        mono(9); ctx.fillStyle = P.text; ctx.textAlign = "left"; ctx.fillText(file, x + 16 * u, y);
-        check(x + 5 * u, y - 3 * u, 4.5 * u, k);
+      header("CONFIG FILES · CONFORMED TO THEIR .dist TEMPLATES", P.mint);
+      ["global_config", "prod_config", "batch_config"].forEach((name, i) => {
+        const y = sy + pad + (48 + i * 48) * u, k = smooth((s - 3.2 - i * 1.1) / 0.8), done = smooth((s - 4 - i * 1.1) / 0.4);
+        mono(9.5); ctx.textAlign = "left"; ctx.fillStyle = P.sand; ctx.fillText(`${name}.yaml.dist`, sx + pad, y);
+        const a0 = sx + pad + 150 * u, a1 = a0 + 34 * u, ax = lerp(a0, a1, k);
+        ctx.strokeStyle = P.faint; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(a0, y - 3 * u); ctx.lineTo(ax, y - 3 * u); ctx.stroke();
+        if (k > 0) { ctx.fillStyle = P.gold; ctx.beginPath(); ctx.moveTo(ax, y - 3 * u); ctx.lineTo(ax - 5 * u, y - 7 * u); ctx.lineTo(ax - 5 * u, y + 1 * u); ctx.fill(); }
+        ctx.globalAlpha = A(0.35 + 0.65 * k); ctx.fillStyle = P.text; ctx.fillText(`${name}.yaml`, a1 + 12 * u, y); ctx.globalAlpha = A(1);
+        check(sx + sw - pad - 10 * u, y - 4 * u, 5 * u, done);
       });
+      tag("configs conform", sx + sw / 2, sy + sh - 14 * u, smooth((s - 7) / 0.5), P.mint, 9);
     });
+    show("6", (s) => dashboard(s, sx, sy, sw, sh, pad, u, header));
     show("7", (s) => {
       header("RESOURCE METRICS · OPTIONAL VALIDATION", P.mint);
       const bars = [["Step 1", 0.34, "6 min"], ["Step 2.3", 0.92, "41 min"], ["Step 2.6", 0.48, "12 min"], ["Memory", 0.62, "11.8 GB"], ["CPU", 0.78, "78%"]];
@@ -869,6 +903,65 @@
       });
     });
     ctx.restore();
+  }
+
+  /** Step 6: the temperature chart fills the screen, then settles into a dashboard beside a donut, KPIs and daily peaks. */
+  function dashboard(s, sx, sy, sw, sh, pad, u, header) {
+    header("TEMPERATURE DASHBOARD · OPTIONAL VALIDATION", P.mint);
+    const temps = DATA.temps, x0 = sx + pad, y0 = sy + pad + 14 * u, cw = sw - pad * 2, ch = sh - pad * 2 - 14 * u, gap = 8 * u;
+    const dock = smooth((s - 5) / 1.2), tileK = (i) => smooth((s - 6 - i * 0.45) / 0.5);
+    const tile = (x, y, w, h, k, title) => {
+      ctx.save(); ctx.globalAlpha = A(k);
+      roundRect(x, y, w, h, 5 * u); ctx.fillStyle = "rgba(255,255,255,0.04)"; ctx.fill(); ctx.strokeStyle = P.faint; ctx.lineWidth = 1; ctx.stroke();
+      if (title) { font(Math.max(6, 7 * u), 600); ctx.fillStyle = P.dim; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.fillText(title, x + 6 * u, y + 11 * u); }
+      ctx.restore();
+    };
+    const topH = ch * 0.64, botY = y0 + topH + gap, botH = ch - topH - gap;
+    // the chart, docking into the top-left tile
+    const cx = x0, cy = lerp(y0, y0 + 10 * u, dock), cWid = lerp(cw, cw * 0.62, dock), cHt = lerp(ch, topH - 10 * u, dock);
+    if (dock > 0) tile(x0, y0, cw * 0.62, topH, dock, "CONDUCTOR TEMPERATURE · °C");
+    ctx.save(); ctx.globalAlpha = A(smooth((s - 3) / 0.6)); chart("6", s, cx, cy, cWid, cHt, u * lerp(1, 0.78, dock)); ctx.restore();
+    // donut: hours spent in each temperature band
+    const bands = [["< 40°", P.mint, temps.filter((t) => t < 40).length], ["40–75°", P.sand, temps.filter((t) => t >= 40 && t <= 75).length], ["> 75°", P.hot, temps.filter((t) => t > 75).length]];
+    const dx = x0 + cw * 0.62 + gap, dw = cw * 0.38 - gap, kd = tileK(0);
+    if (kd > 0) {
+      tile(dx, y0, dw, topH, kd, "HOURS BY BAND");
+      const r = Math.min(dw * 0.2, topH * 0.26), ox = dx + r + 12 * u, oy = y0 + topH / 2 + 6 * u, sweep = smooth((s - 6.2) / 1.2);
+      ctx.save(); ctx.globalAlpha = A(kd); ctx.lineWidth = r * 0.42; ctx.lineCap = "butt";
+      let a = -Math.PI / 2;
+      bands.forEach(([, color, count]) => {
+        const end = a + (count / temps.length) * Math.PI * 2 * sweep;
+        ctx.beginPath(); ctx.arc(ox, oy, r, a, end); ctx.strokeStyle = color; ctx.stroke(); a = end;
+      });
+      font(Math.max(6, 9 * u), 600); ctx.fillStyle = P.text; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(`${temps.length} h`, ox, oy);
+      bands.forEach(([label, color, count], i) => {
+        const ly = y0 + topH / 2 - 14 * u + i * 13 * u, lx = ox + r * 1.2 + 6 * u;
+        ctx.fillStyle = color; ctx.fillRect(lx, ly - 3 * u, 6 * u, 6 * u);
+        font(Math.max(6, 6.4 * u)); ctx.fillStyle = P.dim; ctx.textAlign = "left"; ctx.fillText(`${label} ${count}`, lx + 9 * u, ly);
+      });
+      ctx.restore();
+    }
+    // KPIs and the daily peaks
+    const peak = Math.max(...temps), tw = (cw - gap * 2) / 3;
+    [["PEAK TEMPERATURE", `${peak.toFixed(0)} °C`], ["THERMAL CYCLES", `${DATA.cycles.length + 1}`]].forEach(([label, value], i) => {
+      const k = tileK(1 + i), tx = x0 + i * (tw + gap);
+      if (k <= 0) return;
+      tile(tx, botY, tw, botH, k, label);
+      ctx.save(); ctx.globalAlpha = A(k); font(Math.max(7, 16 * u), 600, SERIF); ctx.fillStyle = i ? P.gold : P.hot; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillText(value, tx + 6 * u, botY + botH - 8 * u); ctx.restore();
+    });
+    const kb = tileK(3), bx = x0 + 2 * (tw + gap);
+    if (kb > 0) {
+      tile(bx, botY, tw, botH, kb, "DAILY PEAK");
+      const days = []; for (let i = 0; i < temps.length; i += 24) days.push(Math.max(...temps.slice(i, i + 24)));
+      const bw = (tw - 12 * u) / days.length, base = botY + botH - 6 * u, top = botY + 16 * u;
+      ctx.save(); ctx.globalAlpha = A(kb);
+      days.forEach((v, i) => {
+        const hgt = (base - top) * (v / 120) * smooth((s - 7.6 - i * 0.12) / 0.5);
+        ctx.fillStyle = v > 75 ? P.hot : P.sand; ctx.fillRect(bx + 6 * u + i * bw + bw * 0.15, base - hgt, bw * 0.7, hgt);
+      });
+      ctx.restore();
+    }
   }
 
   /** The run's conductor temperatures; the trace, events, cycles and stitching appear with their steps. */
@@ -949,7 +1042,7 @@
   // ---- Overlays tied to places in the landscape ----------------------------------------------
   function landOverlays() {
     for (const [x0, name] of [[0, "A"], [1840, "B"]]) {
-      if (cam.s > 0.25) tag(`Substation ${name} · ${name === "A" ? "Elm Ridge" : "Fox Hollow"}`, X(x0 + 80), Y(-56), clamp((cam.s - 0.25) * 4), substationGlow(name) > 0.5 ? P.gold : P.text);
+      if (cam.s > 0.25) tag(`Substation ${name}`, X(x0 + 80), Y(-56), clamp((cam.s - 0.25) * 4), substationGlow(name) > 0.5 ? P.gold : P.text);
     }
     if (cam.s > 0.25) tag("NOAA weather station", X(-700), Y(-150), clamp((cam.s - 0.25) * 4));
     if (cam.s > 0.25 && cam.x > 1700) tag("LRP3 calculator", X(SCREEN.x + SCREEN.w / 2), Y(SCREEN.y - 14), clamp((cam.s - 0.3) * 3), P.gold);
@@ -977,7 +1070,7 @@
         ctx.beginPath(); ctx.arc(X(mid), Y(my), 3 * U, 0, Math.PI * 2); ctx.fillStyle = P.mint; ctx.fill();
       });
       ctx.restore();
-      card(W - 18 * U, 16 * U, "Span map", [["STR 104 → 105", "213 m · Drake"], ["STR 105 → 106", "208 m · Drake"], ["…", ""], ["STR 110 → 111", "221 m · Drake"]], span("1.3", 7.6), { align: "right", w: 220 });
+      card(W - 18 * U, 52 * U, "Span map", [["STR 104 → 105", "213 m · Drake"], ["STR 105 → 106", "208 m · Drake"], ["…", ""], ["STR 110 → 111", "221 m · Drake"]], span("1.3", 7.6), { align: "right", w: 220 });
     }
     // Step 1.4: the nearest NOAA station, by distance from the line
     if (active("1.4")) {
@@ -992,18 +1085,13 @@
     // Step 1.5: what the station measures, a row at a time
     if (active("1.5")) {
       const s = local("1.5"), atmos = s > 13.6;
-      card(W - 18 * U, 16 * U, "NOAA weather, hourly", [
+      card(W - 18 * U, 52 * U, "NOAA weather, hourly", [
         ["Air temperature", `${DATA.air[60].toFixed(1)} °C`, smooth((s - 5.6) / 0.5)],
         ["Solar radiation", "870 W/m²", smooth((s - 8.6) / 0.5)],
         ["Atmosphere", atmos ? "industrial" : "clear?", smooth((s - 13.2) / 0.5)],
         ["Wind speed", `${DATA.wind[60].toFixed(1)} m/s`, smooth((s - 18.6) / 0.5)],
         ["Wind direction", "225° (from the SW)", smooth((s - 19) / 0.5)],
-        ["Convection", "forced", smooth((s - 22.4) / 0.5)],
       ], smooth((s - 5.4) / 0.5), { align: "right", w: 250 });
-      const windTags = Math.min(smooth((s - 17.4) / 0.5), smooth((24 - s) / 0.5));
-      tag("windsock: direction", X(STATION.sock + 6), Y(-104), windTags, P.text, 9.5);
-      tag("anemometer: speed", X(STATION.mast), Y(-96), windTags, P.text, 9.5);
-      tag("wind 2.7 m/s → forced convection", X(-700), Y(-180), smooth((s - 22.4) / 0.5), P.mint);
     }
     // Step 1.6: both substations, one at each end of the line, mapped to the conductor
     if (active("1.6") || active("1.7")) {
@@ -1055,7 +1143,7 @@
     if (active("1.7b")) {
       const s = local("1.7b"), k = smooth((s - 3.6) / 0.6) * (1 - ramp("1.7b", 8.4, 9));
       const hour = 50 + clamp((s - 4) / 4.4) * 40, i = Math.floor(hour), a = lerp(DATA.amp.A[i], DATA.amp.A[i + 1], hour - i);
-      card(W - 18 * U, 16 * U, "Amperage, Substation A", [["Recorded", "hourly"], ["Now", `${a.toFixed(0)} A`], ["Mean", `${M.mean(DATA.amp.A).toFixed(0)} A`], ["σ", `${DATA.sigma.A.toFixed(0)} A`]], k, { align: "right", w: 230 });
+      card(W - 18 * U, 52 * U, "Amperage, Substation A", [["Recorded", "hourly"], ["Now", `${a.toFixed(0)} A`], ["Mean", `${M.mean(DATA.amp.A).toFixed(0)} A`], ["σ", `${DATA.sigma.A.toFixed(0)} A`]], k, { align: "right", w: 230 });
       const mx = X(140), my = Y(-14);
       ctx.save(); ctx.globalAlpha = A(k);
       ctx.beginPath(); ctx.arc(mx, my, 14 * U, Math.PI, 0); ctx.fillStyle = P.screen; ctx.fill(); ctx.strokeStyle = P.sand; ctx.lineWidth = 1.2 * U; ctx.stroke();
@@ -1067,6 +1155,7 @@
 
   // ---- The bot: in the corner while Step 1 gathers inputs, then at its calculator --------------
   function drawBots(introHead) {
+    if (after("outro")) return;   // the outro draws its own bot
     const say = speech();
     let head = introHead, side = "right";
     const guide = Math.min(smooth((T - SHOT["1"].start - 4.2) / 0.8), 1 - smooth((T - SHOT["1.8"].start - 4.8) / 0.8));
@@ -1081,8 +1170,10 @@
       if (v) {
         landCam(v.cam);
         const arrive = ramp("1.8", 8.2, 9.8), typing = active("2.3") && local("2.3") > 3.2 && local("2.3") < 12.8 ? Math.sin(T * 14) * 0.12 : 0;
+        const leave = ramp("7", 10.6, 13.6);   // after Step 7 it walks off to the left
+        const x = leave > 0 ? lerp(DESK.x - 70, DESK.x - 640, leave) : lerp(DESK.x - 200, DESK.x - 70, arrive);
         ctx.save(); ctx.globalAlpha = v.alpha;
-        head = drawBot(X(lerp(DESK.x - 200, DESK.x - 70, arrive)), Y(0), L(150), { walk: arrive > 0 && arrive < 1, arms: [0.25, arrive < 1 ? 0.3 : 1.35 + typing], look: [1, -0.6], talking: !!say });
+        head = drawBot(X(x), Y(0), L(150), { walk: (arrive > 0 && arrive < 1) || (leave > 0 && leave < 1), arms: [0.25, arrive < 1 || leave > 0 ? 0.3 : 1.35 + typing], look: leave > 0 ? [-1, 0] : [1, -0.6], talking: !!say });
         ctx.restore();
         side = "up";
       }
@@ -1090,10 +1181,22 @@
     if (say && head) bubble(head, say.text, say.alpha, side);
   }
 
+  // ---- Outro: a black screen; the bot walks in from the right, waves and says thanks ----------------
+  function drawOutro() {
+    if (!after("outro")) return;
+    ctx.save(); ctx.globalAlpha = ramp("outro", 0, 0.9); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H); ctx.restore();
+    const walkIn = ramp("outro", 1, 4.2);
+    if (walkIn <= 0) return;
+    const say = speech(), wave = say ? 2.5 + Math.sin(T * 7) * 0.35 : 0.3;
+    const head = drawBot(lerp(W + 90 * U, W * 0.5, walkIn), H * 0.86, H * 0.52, { walk: walkIn < 1, look: walkIn < 1 ? [-1, 0] : [0, -0.2], talking: !!say, arms: [0.3, walkIn < 1 ? 0.3 : wave] });
+    if (say) bubble(head, say.text, say.alpha, "right");
+  }
+
   // ---- The step's title, in the middle, fading in and out ------------------------------------------
   function drawTitle() {
     const { shot } = shotAt(T);
     const step = STEP[shot.step], begin = STEP_START[shot.step];
+    if (!step) return;   // the intro and outro have no title card
     const end = Math.max(...SHOTS.filter((sh) => sh.step === shot.step).map((sh) => sh.start + sh.dur));
     const s = T - begin, appear = smooth(s / 0.7), leave = smooth((end - T) / 0.5);
     const k = Math.min(appear, leave);
@@ -1125,12 +1228,16 @@
     drawLand(v.land);
     const introHead = v.intro > 0 ? drawIntro(v.intro) : null;
     drawBots(v.intro > 0.5 ? introHead : null);
+    drawOutro();
     drawTitle();
   }
 
   // ---- Playback and the page around it -------------------------------------------------------------
   const el = {
-    run: document.getElementById("story-run"), play: document.getElementById("story-play"), scrub: document.getElementById("story-scrub"),
+    choose: document.getElementById("story-choose"), playAll: document.getElementById("story-play-all"), stepThrough: document.getElementById("story-step-through"),
+    corner: document.getElementById("story-corner"), reset: document.getElementById("story-reset"), toggle: document.getElementById("story-toggle"),
+    stepper: document.getElementById("story-stepper"), prev: document.getElementById("story-prev"), stepPlay: document.getElementById("story-step-play"), next: document.getElementById("story-next"),
+    play: document.getElementById("story-play"), scrub: document.getElementById("story-scrub"),
     speed: document.getElementById("story-speed"), narration: document.getElementById("story-narration"), time: document.getElementById("story-time"),
     list: document.getElementById("step-list"),
   };
@@ -1148,6 +1255,15 @@
   }
   const stepItems = [...document.querySelectorAll("[data-step-id]")];
   let playing = false, last = 0, shown = -1;
+  let mode = null;       // "all" plays straight through; "step" pauses at the end of every step and substep
+  let stopAt = null;     // in step mode, where the current play stops
+  let tape = null;       // a rewind or fast forward under way: { from, to, begin, dur, dir }
+
+  // Step through stops at every step and substep boundary (a step's extra shots, like 1.7b, play on through)
+  const STOPS = [...new Set([...Object.values(STEP_START), TOTAL])].sort((a, b) => a - b);
+  const nextStop = (t) => STOPS.find((x) => x > t + 0.05) ?? TOTAL;
+  const prevStop = (t) => [...STOPS].reverse().find((x) => x < t - 0.05) ?? 0;
+  const stepName = (key) => (key === "intro" ? "the intro" : key === "outro" ? "the outro" : `Step ${key}`);
 
   const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   function sync() {
@@ -1162,36 +1278,120 @@
         item.classList.toggle("is-done", STEP_START[item.dataset.stepId] < shot.start && item.dataset.stepId !== shot.step);
       });
     }
+    el.corner.hidden = !el.choose.hidden;   // reset and pause/play, once a way to watch is chosen
+    // the step controls show while step through waits between steps
+    const waiting = mode === "step" && !playing && !tape && el.choose.hidden;
+    el.stepper.hidden = !waiting;
+    if (waiting) {
+      el.prev.disabled = T <= 0.05;
+      el.next.disabled = el.stepPlay.disabled = T >= TOTAL - 0.05;
+      el.stepPlay.textContent = T >= TOTAL - 0.05 ? "▶ Play" : `▶ Play ${stepName(shotAt(T + 0.01).shot.step)}`;
+    }
   }
+
+  /** The rewind or fast forward look: torn, shifted bands, scanlines, a rolling tracking bar, static and a label. */
+  function tapeEffect(dir) {
+    const cw = canvas.width, ch = canvas.height, d = cw / W, t = performance.now() / 1000;
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+    for (let i = 0; i < 10; i++) {
+      const y = Math.floor((0.5 + 0.5 * Math.sin(t * 7.3 + i * 12.9)) * ch), h = Math.floor((3 + ((i * 37) % 20)) * d);
+      ctx.drawImage(canvas, 0, y, cw, h, Math.sin(t * 31 + i * 3.1) * 26 * d * dir, y, cw, h);
+    }
+    ctx.globalCompositeOperation = "screen"; ctx.globalAlpha = 0.22;   // a colour fringe
+    ctx.drawImage(canvas, 5 * d * dir, 0);
+    ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
+    ctx.fillStyle = "rgba(0,0,0,0.2)"; for (let y = 0; y < ch; y += 3 * d) ctx.fillRect(0, y, cw, d);
+    const bar = (((t * 0.8 * dir) % 1) + 1) % 1 * ch, bh = 26 * d;
+    ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.fillRect(0, bar, cw, bh);
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    for (let i = 0; i < 160; i++) ctx.fillRect(Math.random() * cw, bar + Math.random() * bh, (1 + Math.random() * 6) * d, d);
+    for (let i = 0; i < 220; i++) ctx.fillRect(Math.random() * cw, Math.random() * ch, d, d);
+    ctx.fillStyle = "rgba(60,90,255,0.06)"; ctx.fillRect(0, 0, cw, ch);
+    if (Math.sin(t * 9) > -0.3) {
+      ctx.font = `600 ${18 * U * d}px ${MONO}`; ctx.textBaseline = "top"; ctx.textAlign = dir < 0 ? "left" : "right";
+      ctx.fillStyle = "rgba(0,0,0,0.5)"; const lx = dir < 0 ? 18 * U * d : cw - 18 * U * d, ly = (dir < 0 ? 16 * U : 54) * d;   // fast forward sits below the corner buttons
+      ctx.fillText(dir < 0 ? "◀◀ REWIND" : "FAST FORWARD ▶▶", lx + 2 * d, ly + 2 * d);
+      ctx.fillStyle = "#FFFFFF"; ctx.fillText(dir < 0 ? "◀◀ REWIND" : "FAST FORWARD ▶▶", lx, ly);
+    }
+    ctx.restore();
+  }
+
   function frame(now) {
+    if (tape) {
+      const k = clamp((now - tape.begin) / (tape.dur * 1000));
+      T = lerp(tape.from, tape.to, k);
+      render();
+      if (k < 1) { tapeEffect(tape.dir); sync(); requestAnimationFrame(frame); return; }
+      tape = null; sync(); return;
+    }
     if (!playing) return;
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     T = Math.min(TOTAL, T + dt * Number(el.speed.value));
-    render(); sync();
-    if (T >= TOTAL) { setPlaying(false); return; }
+    if (stopAt !== null && T >= stopAt) T = stopAt;
+    render();
+    if (T >= TOTAL || (stopAt !== null && T >= stopAt)) { setPlaying(false); sync(); if (T >= TOTAL && mode === "all") choose(); return; }
+    sync();
     requestAnimationFrame(frame);
   }
   function setPlaying(on) {
     playing = on;
     el.play.textContent = on ? "❚❚ Pause" : T >= TOTAL ? "↺ Replay" : "▶ Play";
-    if (on) { if (T >= TOTAL) T = 0; last = performance.now(); requestAnimationFrame(frame); }
+    el.toggle.classList.toggle("is-playing", on);
+    el.toggle.setAttribute("aria-label", on ? "Pause" : "Play"); el.toggle.title = on ? "Pause" : "Play";
+    if (on) {
+      if (T >= TOTAL) T = 0;
+      stopAt = mode === "step" ? nextStop(T) : null;
+      last = performance.now(); requestAnimationFrame(frame);
+    }
+    sync();
   }
-  function seek(t) { T = clamp(t, 0, TOTAL); render(); sync(); }
+  /** Rewind (dir −1) or fast forward (dir 1) to t, with the tape effect. */
+  function wind(t, dir) {
+    setPlaying(false);
+    tape = { from: T, to: t, begin: performance.now(), dur: clamp(Math.abs(t - T) / 12, 0.9, 2.4), dir };
+    sync(); requestAnimationFrame(frame);
+  }
+  function seek(t) { tape = null; T = clamp(t, 0, TOTAL); render(); sync(); }
+  function choose() { el.choose.hidden = false; setPlaying(false); }
+  function start(m) {
+    mode = m; el.choose.hidden = true;
+    if (T >= TOTAL - 0.05) seek(0);
+    setPlaying(true);
+  }
 
-  el.run.addEventListener("click", () => { el.run.hidden = true; setPlaying(true); });
-  el.play.addEventListener("click", () => { el.run.hidden = true; setPlaying(!playing); });
-  el.scrub.addEventListener("input", () => { el.run.hidden = true; setPlaying(false); seek((el.scrub.value / 1000) * TOTAL); });
+  el.playAll.addEventListener("click", () => start("all"));
+  el.stepThrough.addEventListener("click", () => start("step"));
+  el.prev.addEventListener("click", () => wind(prevStop(T), -1));
+  el.next.addEventListener("click", () => wind(nextStop(T), 1));
+  el.stepPlay.addEventListener("click", () => setPlaying(true));
+  const toggle = () => { el.choose.hidden = true; mode = mode || "all"; tape = null; setPlaying(!playing); };
+  el.play.addEventListener("click", toggle);
+  el.toggle.addEventListener("click", toggle);
+  el.reset.addEventListener("click", () => { mode = null; seek(0); choose(); });   // back to the start, and the choice of how to watch
+  // dragging the timeline jumps straight there (no tape effect); on release it carries on if it was playing,
+  // and in step through it stops at the end of the section it landed in
+  let scrubbing = false, resume = false;
+  el.scrub.addEventListener("input", () => {
+    const t = (el.scrub.value / 1000) * TOTAL;   // read first: pausing syncs the slider back to T
+    if (!scrubbing) { scrubbing = true; resume = playing || !!tape; }
+    el.choose.hidden = true; mode = mode || "all";
+    tape = null; setPlaying(false); seek(t);
+  });
+  el.scrub.addEventListener("change", () => {
+    scrubbing = false;
+    if (resume && T < TOTAL) setPlaying(true);
+  });
   stepItems.forEach((item) => item.addEventListener("click", () => {
-    el.run.hidden = true;
+    el.choose.hidden = true; mode = mode || "all";
     seek(STEP_START[item.dataset.stepId] + 0.01);
-    if (!playing) setPlaying(true);
+    setPlaying(true);
   }));
-  new ResizeObserver(() => { resize(); render(); }).observe(canvas);
+  new ResizeObserver(() => { resize(); render(); if (tape) tapeEffect(tape.dir); }).observe(canvas);
   new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
   resize();
   const hash = new URLSearchParams(location.hash.slice(1));
-  if (hash.has("t")) { el.run.hidden = true; seek(Number(hash.get("t")) || 0); } else seek(0);
+  if (hash.has("t")) { el.choose.hidden = true; mode = "all"; seek(Number(hash.get("t")) || 0); } else seek(0);
   if (document.fonts) document.fonts.ready.then(render);
   window.PipelineStory = { seek, total: TOTAL, steps: STEPS, shots: SHOTS.map(({ key, step, start, dur }) => ({ key, step, start, dur })), data: DATA };
 })();
