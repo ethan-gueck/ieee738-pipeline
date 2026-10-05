@@ -925,7 +925,7 @@
     const bands = [["< 40°", P.mint, temps.filter((t) => t < 40).length], ["40–75°", P.sand, temps.filter((t) => t >= 40 && t <= 75).length], ["> 75°", P.hot, temps.filter((t) => t > 75).length]];
     const dx = x0 + cw * 0.62 + gap, dw = cw * 0.38 - gap, kd = tileK(0);
     if (kd > 0) {
-      tile(dx, y0, dw, topH, kd, "HOURS BY BAND");
+      tile(dx, y0, dw, topH, kd, "HOURS BY LINE");
       const r = Math.min(dw * 0.2, topH * 0.26), ox = dx + r + 12 * u, oy = y0 + topH / 2 + 6 * u, sweep = smooth((s - 6.2) / 1.2);
       ctx.save(); ctx.globalAlpha = A(kd); ctx.lineWidth = r * 0.42; ctx.lineCap = "butt";
       let a = -Math.PI / 2;
